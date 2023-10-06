@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import math
 import warnings
+import os
 
 warnings.filterwarnings('ignore')
 
@@ -19,7 +20,8 @@ warnings.filterwarnings('ignore')
 meta_data_filename = "metadata_input" # Metadata user upload
 output_info_filename = "sample_list.csv" # CSV file having Timepoint,KrakenOutput,DiamondOutput
 
-save_dir = "./"
+save_dir = "./input_for_viz/"
+os.makedirs(save_dir, exist_ok = True)
 
 
 ###################################
@@ -42,7 +44,7 @@ for i in range(len(meta_data)) :
 
 meta_data['Time'] = doc_list
 meta_data.rename(columns = {'Sample Name' : "Sample", "Time" : "DOC"}, inplace = True)
-meta_data.to_csv(save_dir + "meta_data.csv", mode = "w", index = False)
+meta_data.to_csv(os.path.join(save_dir,"meta_data.csv"), mode = "w", index = False)
 
 
 ###################################
@@ -94,7 +96,7 @@ for i in range(len(taxa_list)) : #taxa_list
 				tmp_col.append(col)
 				tmp_val.append(corr_timepoint[col][row])
 		corr_timepoint = pd.DataFrame({'row' : tmp_row, 'col' : tmp_col, 'val' : tmp_val})
-		corr_timepoint.to_csv(save_dir + "corr_timepoints.csv", mode = "w", index = False)
+		corr_timepoint.to_csv(os.path.join(save_dir, "corr_timepoints.csv"), mode = "w", index = False)
 	data_dict[taxa] = data_dict[taxa].T
 	top30_otu_list = pd.DataFrame(data_dict[taxa].sum()).sort_values(0, ascending = False)[:30].index.tolist()
 	data_dict[taxa] = data_dict[taxa][top30_otu_list]
@@ -110,16 +112,16 @@ for i in range(len(taxa_list)) : #taxa_list
 			tmp_col.append(col)
 			tmp_val.append(corr_otu[col][row])
 	corr_otu = pd.DataFrame({'row' : tmp_row, 'col' : tmp_col, 'val' : tmp_val})
-	corr_otu.to_csv(save_dir + 'corr_' + taxa_fullname_list[i] + ".csv", mode = "w", index = False)
+	corr_otu.to_csv(os.path.join(save_dir, 'corr_' + taxa_fullname_list[i] + ".csv"), mode = "w", index = False)
 
 top20_class = data_dict['C'].T[:20].T
 top20_class['Sum'] = top20_class.T.sum()
 top20_class.index.name = 'timepoint'
-top20_class.to_csv(save_dir + "data_eff.csv", mode = "w", index = True)
+top20_class.to_csv(os.path.join(save_dir, "data_eff.csv"), mode = "w", index = True)
 del top20_class['Sum']
 top20_class = top20_class.T
 top20_class.index.name = 'classes'
-top20_class.to_csv(save_dir + "transpose_eff.csv", mode = "w", index = True)
+top20_class.to_csv(os.path.join(save_dir, "transpose_eff.csv"), mode = "w", index = True)
 
 
 ###################################
@@ -200,7 +202,7 @@ feature_iqr_outlier_df = feature_iqr_outlier_df.rename(columns = {'index' : 'tim
 
 arg_list = feature_iqr_outlier_df.columns.tolist()
 arg_list.remove("timepoint")
-pd.DataFrame(arg_list).T.to_csv(save_dir + "arg_list.csv", mode = "w", index = False, header = False)
+pd.DataFrame(arg_list).T.to_csv(os.path.join(save_dir, "arg_list.csv"), mode = "w", index = False, header = False)
 
 arg_abun_data_gene_family_sum.reset_index(inplace = True, drop = False)
 
@@ -214,7 +216,7 @@ for arg in arg_list :
 	tmp_merged['ARG'] = arg
 	final_df = pd.concat([final_df, tmp_merged], axis = 0)
 
-final_df.to_csv(save_dir + "viz_EFF_ARG_anomaly_data.csv", mode = "w", index = False)
+final_df.to_csv(os.path.join(save_dir, "viz_EFF_ARG_anomaly_data.csv"), mode = "w", index = False)
 
 
 grouped = arg_abun_data.groupby('drug')
@@ -238,5 +240,5 @@ principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_com
 
 arg_abun_data_drug_sum.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
 arg_abun_data_drug_sum = pd.concat([arg_abun_data_drug_sum, principalDf], axis = 1)
-arg_abun_data_drug_sum.to_csv(save_dir + 'pca_output_arg_abundance_16S.csv', index=False, float_format = "%.8f")
+arg_abun_data_drug_sum.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_16S.csv'), index=False, float_format = "%.8f")
 

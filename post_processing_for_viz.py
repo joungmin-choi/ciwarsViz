@@ -117,12 +117,36 @@ for i in range(len(taxa_list)) : #taxa_list
 top20_class = data_dict['C'].T[:20].T
 top20_class['Sum'] = top20_class.T.sum()
 top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff.csv"), mode = "w", index = True)
+top20_class.to_csv(os.path.join(save_dir, "data_eff_C.csv"), mode = "w", index = True)
 del top20_class['Sum']
 top20_class = top20_class.T
 top20_class.index.name = 'classes'
 top20_class.to_csv(os.path.join(save_dir, "transpose_eff.csv"), mode = "w", index = True)
 
+top20_class = data_dict['P'].T[:20].T
+top20_class['Sum'] = top20_class.T.sum()
+top20_class.index.name = 'timepoint'
+top20_class.to_csv(os.path.join(save_dir, "data_eff_P.csv"), mode = "w", index = True)
+
+top20_class = data_dict['G'].T[:20].T
+top20_class['Sum'] = top20_class.T.sum()
+top20_class.index.name = 'timepoint'
+top20_class.to_csv(os.path.join(save_dir, "data_eff_G.csv"), mode = "w", index = True)
+
+top20_class = data_dict['O'].T[:20].T
+top20_class['Sum'] = top20_class.T.sum()
+top20_class.index.name = 'timepoint'
+top20_class.to_csv(os.path.join(save_dir, "data_eff_O.csv"), mode = "w", index = True)
+
+top20_class = data_dict['F'].T[:20].T
+top20_class['Sum'] = top20_class.T.sum()
+top20_class.index.name = 'timepoint'
+top20_class.to_csv(os.path.join(save_dir, "data_eff_F.csv"), mode = "w", index = True)
+
+top20_class = data_dict['S'].T[:20].T
+top20_class['Sum'] = top20_class.T.sum()
+top20_class.index.name = 'timepoint'
+top20_class.to_csv(os.path.join(save_dir, "data_eff_S.csv"), mode = "w", index = True)
 
 ###################################
 #### Diamond output processing ####

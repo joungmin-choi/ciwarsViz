@@ -99,6 +99,21 @@ for i in range(len(taxa_list)) : #taxa_list
 		corr_timepoint.to_csv(os.path.join(save_dir, "corr_timepoints.csv"), mode = "w", index = False)
 	data_dict[taxa] = data_dict[taxa].T
 	top30_otu_list = pd.DataFrame(data_dict[taxa].sum()).sort_values(0, ascending = False)[:30].index.tolist()
+
+	## code added for stacked barplot
+	data_dict_stacked = data_dict.copy()
+	top19_otu_list = pd.DataFrame(data_dict_stacked[taxa].sum()).sort_values(0, ascending = False)[:19].index.tolist()	
+	data_dict_stacked[taxa]['others'] = data_dict_stacked[taxa].drop(columns=top19_otu_list).sum(axis=1)
+	top20_otu_list = top19_otu_list + ['others']
+	data_dict_stacked[taxa] = data_dict_stacked[taxa][top20_otu_list]
+	top20_otu_list = [otu.strip() for otu in top20_otu_list]
+	data_dict_stacked[taxa].columns = top20_otu_list
+
+	top20_class = data_dict_stacked[taxa].T[:20].T
+	top20_class['Sum'] = top20_class.T.sum()
+	top20_class.index.name = 'timepoint'
+	top20_class.to_csv(os.path.join(save_dir, "data_eff_" + taxa + "_stacked.csv"), mode = "w", index = True)
+
 	data_dict[taxa] = data_dict[taxa][top30_otu_list]
 	top30_otu_list = [otu.strip() for otu in top30_otu_list]
 	data_dict[taxa].columns = top30_otu_list
@@ -114,39 +129,39 @@ for i in range(len(taxa_list)) : #taxa_list
 	corr_otu = pd.DataFrame({'row' : tmp_row, 'col' : tmp_col, 'val' : tmp_val})
 	corr_otu.to_csv(os.path.join(save_dir, 'corr_' + taxa_fullname_list[i] + ".csv"), mode = "w", index = False)
 
-top20_class = data_dict['C'].T[:20].T
-top20_class['Sum'] = top20_class.T.sum()
-top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff_C.csv"), mode = "w", index = True)
-del top20_class['Sum']
-top20_class = top20_class.T
-top20_class.index.name = 'classes'
-top20_class.to_csv(os.path.join(save_dir, "transpose_eff.csv"), mode = "w", index = True)
+# top20_class = data_dict_stacked['C'].T[:20].T
+# top20_class['Sum'] = top20_class.T.sum()
+# top20_class.index.name = 'timepoint'
+# top20_class.to_csv(os.path.join(save_dir, "data_eff_C.csv"), mode = "w", index = True)
+# del top20_class['Sum']
+# top20_class = top20_class.T
+# top20_class.index.name = 'classes'
+# top20_class.to_csv(os.path.join(save_dir, "transpose_eff.csv"), mode = "w", index = True)
 
-top20_class = data_dict['P'].T[:20].T
-top20_class['Sum'] = top20_class.T.sum()
-top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff_P.csv"), mode = "w", index = True)
+# top20_class = data_dict_stacked['P'].T[:20].T
+# top20_class['Sum'] = top20_class.T.sum()
+# top20_class.index.name = 'timepoint'
+# top20_class.to_csv(os.path.join(save_dir, "data_eff_P.csv"), mode = "w", index = True)
 
-top20_class = data_dict['G'].T[:20].T
-top20_class['Sum'] = top20_class.T.sum()
-top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff_G.csv"), mode = "w", index = True)
+# top20_class = data_dict_stacked['G'].T[:20].T
+# top20_class['Sum'] = top20_class.T.sum()
+# top20_class.index.name = 'timepoint'
+# top20_class.to_csv(os.path.join(save_dir, "data_eff_G.csv"), mode = "w", index = True)
 
-top20_class = data_dict['O'].T[:20].T
-top20_class['Sum'] = top20_class.T.sum()
-top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff_O.csv"), mode = "w", index = True)
+# top20_class = data_dict_stacked['O'].T[:20].T
+# top20_class['Sum'] = top20_class.T.sum()
+# top20_class.index.name = 'timepoint'
+# top20_class.to_csv(os.path.join(save_dir, "data_eff_O.csv"), mode = "w", index = True)
 
-top20_class = data_dict['F'].T[:20].T
-top20_class['Sum'] = top20_class.T.sum()
-top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff_F.csv"), mode = "w", index = True)
+# top20_class = data_dict_stacked['F'].T[:20].T
+# top20_class['Sum'] = top20_class.T.sum()
+# top20_class.index.name = 'timepoint'
+# top20_class.to_csv(os.path.join(save_dir, "data_eff_F.csv"), mode = "w", index = True)
 
-top20_class = data_dict['S'].T[:20].T
-top20_class['Sum'] = top20_class.T.sum()
-top20_class.index.name = 'timepoint'
-top20_class.to_csv(os.path.join(save_dir, "data_eff_S.csv"), mode = "w", index = True)
+# top20_class = data_dict_stacked['S'].T[:20].T
+# top20_class['Sum'] = top20_class.T.sum()
+# top20_class.index.name = 'timepoint'
+# top20_class.to_csv(os.path.join(save_dir, "data_eff_S.csv"), mode = "w", index = True)
 
 ###################################
 #### Diamond output processing ####
@@ -169,6 +184,13 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 		arg_abun_data = data.copy()
 	else :
 		arg_abun_data = pd.merge(arg_abun_data, data, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
+
+melted_arg_abun_data = pd.melt(arg_abun_data, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
+melted_arg_abun_data = melted_arg_abun_data.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
+melted_arg_abun_data = melted_arg_abun_data.drop(['protein_accession', 'gene_family'], axis=1)
+melted_arg_abun_data = melted_arg_abun_data.drop_duplicates()
+melted_arg_abun_data = melted_arg_abun_data.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
+melted_arg_abun_data.to_csv(os.path.join(save_dir, "data_piechart.csv"), index = False)
 
 grouped = arg_abun_data.groupby('gene_family')
 arg_abun_data_gene_family_sum = grouped.sum()

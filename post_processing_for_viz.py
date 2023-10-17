@@ -11,7 +11,10 @@ from sklearn.decomposition import PCA
 import math
 import warnings
 import os
-
+from sklearn.manifold import MDS
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+from sklearn.metrics import silhouette_score
 warnings.filterwarnings('ignore')
 
 ###############
@@ -172,40 +175,6 @@ for i in range(len(taxa_list)) : #taxa_list
 	corr_otu = pd.DataFrame({'row' : tmp_row, 'col' : tmp_col, 'val' : tmp_val})
 	corr_otu.to_csv(os.path.join(save_dir, 'corr_' + taxa_fullname_list[i] + ".csv"), mode = "w", index = False)
 
-# top20_class = data_dict_stacked['C'].T[:20].T
-# top20_class['Sum'] = top20_class.T.sum()
-# top20_class.index.name = 'timepoint'
-# top20_class.to_csv(os.path.join(save_dir, "data_eff_C.csv"), mode = "w", index = True)
-# del top20_class['Sum']
-# top20_class = top20_class.T
-# top20_class.index.name = 'classes'
-# top20_class.to_csv(os.path.join(save_dir, "transpose_eff.csv"), mode = "w", index = True)
-
-# top20_class = data_dict_stacked['P'].T[:20].T
-# top20_class['Sum'] = top20_class.T.sum()
-# top20_class.index.name = 'timepoint'
-# top20_class.to_csv(os.path.join(save_dir, "data_eff_P.csv"), mode = "w", index = True)
-
-# top20_class = data_dict_stacked['G'].T[:20].T
-# top20_class['Sum'] = top20_class.T.sum()
-# top20_class.index.name = 'timepoint'
-# top20_class.to_csv(os.path.join(save_dir, "data_eff_G.csv"), mode = "w", index = True)
-
-# top20_class = data_dict_stacked['O'].T[:20].T
-# top20_class['Sum'] = top20_class.T.sum()
-# top20_class.index.name = 'timepoint'
-# top20_class.to_csv(os.path.join(save_dir, "data_eff_O.csv"), mode = "w", index = True)
-
-# top20_class = data_dict_stacked['F'].T[:20].T
-# top20_class['Sum'] = top20_class.T.sum()
-# top20_class.index.name = 'timepoint'
-# top20_class.to_csv(os.path.join(save_dir, "data_eff_F.csv"), mode = "w", index = True)
-
-# top20_class = data_dict_stacked['S'].T[:20].T
-# top20_class['Sum'] = top20_class.T.sum()
-# top20_class.index.name = 'timepoint'
-# top20_class.to_csv(os.path.join(save_dir, "data_eff_S.csv"), mode = "w", index = True)
-
 ###################################
 #### Diamond output processing ####
 ###################################
@@ -357,15 +326,94 @@ arg_abun_data_drug_sum.reset_index(inplace = True, drop = False)
 arg_abun_data_drug_sum.rename(columns = {'index' : 'timepoint'}, inplace = True)
 
 
-pca = PCA(n_components=2)
-x = arg_abun_data_drug_sum.loc[:, drug_class].values
-y = arg_abun_data_drug_sum.loc[:,['timepoint']].values
+# Standardize your data (excluding the "timepoint" column)
+x = arg_abun_data_drug_sum.drop(columns=["timepoint"]).values
 x = StandardScaler().fit_transform(x)
-principalComponents = pca.fit_transform(x)
-principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_component_1', 'principal_component_2'])
+
+# Perform nMDS (Multidimensional Scaling)
+mds = MDS(n_components=2, random_state=42)
+principalComponents = mds.fit_transform(x)
+
+# Create a DataFrame for the principal components
+principalDf = pd.DataFrame(data=principalComponents, columns=['nMDS_component_1', 'nMDS_component_2'])
+
+# Create a range of K values to test
+k_values = range(4, 11)  # You can adjust the range
+
+# Initialize lists to store silhouette scores
+silhouette_scores = []
+
+# Iterate through different K values and calculate silhouette score
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    cluster_labels = kmeans.fit_predict(principalDf)  # Use the principal components for clustering
+    silhouette_avg = silhouette_score(principalDf, cluster_labels)
+    silhouette_scores.append(silhouette_avg)
+
+# Find the K with the highest silhouette score
+optimal_k = k_values[silhouette_scores.index(max(silhouette_scores))]
 
 
-arg_abun_data_drug_sum.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
-arg_abun_data_drug_sum = pd.concat([arg_abun_data_drug_sum, principalDf], axis = 1)
-arg_abun_data_drug_sum.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_16S.csv'), index=False, float_format = "%.8f")
+# Perform K-means clustering with the optimal K (using principal components)
+optimal_kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+optimal_cluster_labels = optimal_kmeans.fit_predict(principalDf)
 
+# Add cluster labels to the principal components DataFrame
+principalDf['cluster_number'] = optimal_cluster_labels
+
+# Add the "timepoint" column to the DataFrame
+principalDf['timepoint'] = arg_abun_data_drug_sum['timepoint'].values
+
+# Save the DataFrame to a CSV file
+arg_cluster_file_name = "nMDS_cluster_results.csv"
+
+results_file = os.path.join(save_dir, arg_cluster_file_name)
+principalDf.to_csv(results_file, index=False)
+
+file_names = ['data_eff_C_stacked.csv','data_eff_F_stacked.csv','data_eff_G_stacked.csv','data_eff_O_stacked.csv', 'data_eff_P_stacked.csv','data_eff_S_stacked.csv']
+
+for file_name in file_names:
+    # Load the data from the CSV file
+    timepoints_species_data = pd.read_csv(os.path.join(save_dir, file_name))
+
+    # Standardize your data (excluding the "timepoint" column)
+    columns_to_drop = ["timepoint", "others", "Sum"]
+    x_species = timepoints_species_data.drop(columns=columns_to_drop).values
+    x_species = StandardScaler().fit_transform(x_species)
+
+    # Perform nMDS (Multidimensional Scaling)
+    mds_species = MDS(n_components=2, random_state=42)
+    principalComponents_species = mds_species.fit_transform(x_species)
+
+    # Create a DataFrame for the principal components
+    principalDf_species = pd.DataFrame(data=principalComponents_species, columns=['nMDS_component_1', 'nMDS_component_2'])
+
+    # Create a range of K values to test
+    k_values_species = range(4, 11)  # You can adjust the range
+
+    # Initialize lists to store silhouette scores
+    silhouette_scores_species = []
+
+    # Iterate through different K values and calculate silhouette score
+    for k in k_values_species:
+        kmeans_species = KMeans(n_clusters=k, random_state=42)
+        cluster_labels_species = kmeans_species.fit_predict(principalDf_species)  # Use the principal components for clustering
+        silhouette_avg_species = silhouette_score(principalDf_species, cluster_labels_species)
+        silhouette_scores_species.append(silhouette_avg_species)
+
+    # Find the K with the highest silhouette score
+    optimal_k_species = k_values_species[silhouette_scores_species.index(max(silhouette_scores_species))]
+
+    # Perform K-means clustering with the optimal K (using principal components)
+    optimal_kmeans_species = KMeans(n_clusters=optimal_k_species, random_state=42)
+    optimal_cluster_labels_species = optimal_kmeans_species.fit_predict(principalDf_species)
+
+    # Add cluster labels to the principal components DataFrame
+    principalDf_species['cluster_number'] = optimal_cluster_labels_species
+
+    # Add the "timepoint" column to the DataFrame
+    principalDf_species['timepoint'] = timepoints_species_data['timepoint'].values
+
+    # Save the results to a CSV file in the results directory
+    results_file = os.path.join(save_dir, file_name.replace('.csv', '_clustering_results.csv'))
+    principalDf_species.to_csv(results_file, index=False)

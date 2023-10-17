@@ -46,6 +46,49 @@ meta_data['Time'] = doc_list
 meta_data.rename(columns = {'Sample Name' : "Sample", "Time" : "DOC"}, inplace = True)
 meta_data.to_csv(os.path.join(save_dir,"meta_data.csv"), mode = "w", index = False)
 
+################################
+### Find anomaly in metadata ###
+################################
+del meta_data['Sample']
+meta_data.rename(columns = {'DOC' : 'timepoint'}, inplace = True)
+meta_data.set_index('timepoint', inplace = True, drop = True)
+
+q1 = meta_data.quantile(0.25)
+q3 = meta_data.quantile(0.75)
+iqr = q3-q1
+
+meta_feature_list = meta_data.columns.tolist()
+
+sample_list = meta_data.index.tolist()
+sample_iqr_outlier = []
+feature_iqr_outlier_df = pd.DataFrame()
+for sample in sample_list :
+	feature_outlier = []
+	for i in range(len(meta_feature_list)) :
+		if (meta_data[meta_feature_list[i]][sample] <= q1[i] - 1.5*iqr[i]) or (meta_data[meta_feature_list[i]][sample] >= q3[i] + 1.5*iqr[i]) :
+			feature_outlier.append('anomaly')
+		else :
+			feature_outlier.append('normal')
+	feature_iqr_outlier_df[sample] = feature_outlier
+
+feature_iqr_outlier_df = feature_iqr_outlier_df.T
+feature_iqr_outlier_df.columns = meta_data.columns
+feature_iqr_outlier_df.reset_index(inplace = True, drop = False)
+feature_iqr_outlier_df = feature_iqr_outlier_df.rename(columns = {'index' : 'timepoint'})
+
+meta_data.reset_index(inplace = True, drop = False)
+final_df = pd.DataFrame()
+for feature in meta_feature_list :
+	tmp_value_df = meta_data[['timepoint', feature]]
+	tmp_anomaly_df = feature_iqr_outlier_df[['timepoint', feature]]
+	tmp_value_df.columns = ['timepoint', 'value']
+	tmp_anomaly_df.columns = ['timepoint', 'is_anomaly']
+	tmp_merged = pd.merge(tmp_value_df, tmp_anomaly_df)
+	tmp_merged['feature'] = feature
+	final_df = pd.concat([final_df, tmp_merged], axis = 0)
+
+final_df.to_csv(os.path.join(save_dir, "viz_metadata_anomaly_data.csv"), mode = "w", index = False)
+
 
 ###################################
 #### Kraken2 output processing ####
@@ -229,31 +272,37 @@ q1 = data.quantile(0.25)
 q3 = data.quantile(0.75)
 iqr = q3-q1
 
+data_arg_list = data.columns.tolist()
+anomalous_arg_list = []
+normal_arg_list = []
+
 sample_list = data.index.tolist()
 sample_iqr_outlier = []
 feature_iqr_outlier_df = pd.DataFrame()
 for sample in sample_list :
 	feature_outlier = []
-	for i in range(len(data.columns)) :
-		if (data[data.columns[i]][sample] <= q1[i] - 1.5*iqr[i]) or (data[data.columns[i]][sample] >= q3[i] + 1.5*iqr[i]) :
+	for i in range(len(data_arg_list)) :
+		if (data[data_arg_list[i]][sample] <= q1[i] - 1.5*iqr[i]) or (data[data_arg_list[i]][sample] >= q3[i] + 1.5*iqr[i]) :
 			feature_outlier.append('anomaly')
+			if data_arg_list[i] not in anomalous_arg_list :
+				anomalous_arg_list.append(data_arg_list[i])
 		else :
 			feature_outlier.append('normal')
 	feature_iqr_outlier_df[sample] = feature_outlier
+
+normal_arg_list = [arg for arg in data_arg_list if arg not in anomalous_arg_list]
 
 feature_iqr_outlier_df = feature_iqr_outlier_df.T
 feature_iqr_outlier_df.columns = data.columns
 feature_iqr_outlier_df.reset_index(inplace = True, drop = False)
 feature_iqr_outlier_df = feature_iqr_outlier_df.rename(columns = {'index' : 'timepoint'})
 
-arg_list = feature_iqr_outlier_df.columns.tolist()
-arg_list.remove("timepoint")
-pd.DataFrame(arg_list).T.to_csv(os.path.join(save_dir, "arg_list.csv"), mode = "w", index = False, header = False)
-
+pd.DataFrame(normal_arg_list).T.to_csv(os.path.join(save_dir, "arg_normal_list.csv"), mode = "w", index = False, header = False)
+pd.DataFrame(anomalous_arg_list).T.to_csv(os.path.join(save_dir, "arg_anomaly_list.csv"), mode = "w", index = False, header = False)
 arg_abun_data_gene_family_sum.reset_index(inplace = True, drop = False)
 
 final_df = pd.DataFrame()
-for arg in arg_list :
+for arg in normal_arg_list :
 	tmp_value_df = arg_abun_data_gene_family_sum[['timepoint', arg]]
 	tmp_anomaly_df = feature_iqr_outlier_df[['timepoint', arg]]
 	tmp_value_df.columns = ['timepoint', 'abundance']
@@ -262,8 +311,40 @@ for arg in arg_list :
 	tmp_merged['ARG'] = arg
 	final_df = pd.concat([final_df, tmp_merged], axis = 0)
 
-final_df.to_csv(os.path.join(save_dir, "viz_EFF_ARG_anomaly_data.csv"), mode = "w", index = False)
+final_df.to_csv(os.path.join(save_dir, "viz_ARG_normal_data.csv"), mode = "w", index = False)
 
+final_df = pd.DataFrame()
+for arg in anomalous_arg_list :
+	tmp_value_df = arg_abun_data_gene_family_sum[['timepoint', arg]]
+	tmp_anomaly_df = feature_iqr_outlier_df[['timepoint', arg]]
+	tmp_value_df.columns = ['timepoint', 'abundance']
+	tmp_anomaly_df.columns = ['timepoint', 'is_anomaly']
+	tmp_merged = pd.merge(tmp_value_df, tmp_anomaly_df)
+	tmp_merged['ARG'] = arg
+	final_df = pd.concat([final_df, tmp_merged], axis = 0)
+
+final_df.to_csv(os.path.join(save_dir, "viz_ARG_anomaly_data.csv"), mode = "w", index = False)
+
+#######################################
+### Count the # of ARGs for anomaly ###
+#######################################
+summary_info_df = final_df.groupby(['timepoint', 'is_anomaly']).count().reset_index()
+final_summary_df = pd.DataFrame()
+for sample in sample_list :
+	tmp_df = summary_info_df[summary_info_df['timepoint'] == sample]
+	tmp_dict = {}
+	idx_list = tmp_df.index
+	tmp_dict['timepoint'] = [tmp_df['timepoint'][idx_list[0]]]
+	for idx in idx_list :
+		tmp_dict[tmp_df['is_anomaly'][idx]] = [tmp_df['ARG'][idx]]
+	tmp_dict = pd.DataFrame(tmp_dict)
+	final_summary_df = pd.concat([final_summary_df, tmp_dict], axis = 0)
+
+final_summary_df.fillna(0, inplace = True)
+final_summary_df['anomaly'] = final_summary_df['anomaly'].astype('float')
+final_summary_df['normal'] = final_summary_df['normal'].astype('float')
+
+final_summary_df.to_csv(os.path.join(save_dir, "viz_ARG_anomaly_summary.csv"), mode = "w", index = False)
 
 grouped = arg_abun_data.groupby('drug')
 arg_abun_data_drug_sum = grouped.sum()

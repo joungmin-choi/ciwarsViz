@@ -337,6 +337,17 @@ drug_class = arg_abun_data_drug_sum.columns.tolist()
 arg_abun_data_drug_sum.reset_index(inplace = True, drop = False)
 arg_abun_data_drug_sum.rename(columns = {'index' : 'timepoint'}, inplace = True)
 
+pca = PCA(n_components=2)
+x = arg_abun_data_drug_sum.loc[:, drug_class].values
+y = arg_abun_data_drug_sum.loc[:,['timepoint']].values
+x = StandardScaler().fit_transform(x)
+principalComponents = pca.fit_transform(x)
+principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_component_1', 'principal_component_2'])
+
+arg_abun_data_drug_sum_copy = arg_abun_data_drug_sum.copy()
+arg_abun_data_drug_sum_copy.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
+arg_abun_data_drug_sum_copy = pd.concat([arg_abun_data_drug_sum_copy, principalDf], axis = 1)
+arg_abun_data_drug_sum_copy.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_16S.csv'), index=False, float_format = "%.8f")
 
 # Standardize your data (excluding the "timepoint" column)
 x = arg_abun_data_drug_sum.drop(columns=["timepoint"]).values

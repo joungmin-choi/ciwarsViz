@@ -42,6 +42,8 @@ for i in range(len(meta_data)) :
 	day = meta_data['Time'][i].split('-')[2]
 	if len(day) == 1 :
 		day = '0' + day
+	if len(month) == 1 :
+		month = '0' + month
 	timepoint = year + "-" + month + "-" + day
 	doc_list.append(timepoint)
 
@@ -114,6 +116,8 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	day = otu_sample_info['Timepoint'][i].split('-')[2]
 	if len(day) == 1 :
 		day = '0' + day
+	if len(month) == 1 :
+		month = '0' + month
 	timepoint = year + "-" + month + "-" + day
 	for taxa in taxa_list :
 		data_selected_taxa = data[data[3] == taxa]
@@ -187,6 +191,8 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	day = otu_sample_info['Timepoint'][i].split('-')[2]
 	if len(day) == 1 :
 		day = '0' + day
+	if len(month) == 1 :
+		month = '0' + month
 	timepoint = year + "-" + month + "-" + day
 	data = data.drop_duplicates(['gene', 'drug', 'protein_accession', 'gene_family'], keep = 'first')
 	data.reset_index(inplace = True, drop = True)
@@ -204,6 +210,11 @@ melted_arg_abun_data = melted_arg_abun_data.drop_duplicates()
 melted_arg_abun_data = melted_arg_abun_data.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
 melted_arg_abun_data.to_csv(os.path.join(save_dir, "data_piechart.csv"), index = False)
 
+
+tmp_arg_abundance = melted_arg_abun_data.copy()
+del tmp_arg_abundance['drug']
+arg_abun_data_gene_family_sum = pd.pivot_table(tmp_arg_abundance, values='abundance', index=['timepoint'],columns=['gene'])
+'''
 grouped = arg_abun_data.groupby('gene_family')
 arg_abun_data_gene_family_sum = grouped.sum()
 arg_abun_data_gene_family_sum = pd.DataFrame(arg_abun_data_gene_family_sum)
@@ -212,6 +223,7 @@ arg_abun_data_gene_family_sum.set_index('gene', inplace = True, drop = True)
 arg_abun_data_gene_family_sum = arg_abun_data_gene_family_sum.T
 arg_abun_data_gene_family_sum = arg_abun_data_gene_family_sum.sort_index()
 arg_abun_data_gene_family_sum.index.name = 'timepoint'
+'''
 
 feature_list = arg_abun_data_gene_family_sum.columns.tolist()
 

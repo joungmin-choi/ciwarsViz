@@ -11,3 +11,11 @@ Timepoint,KrakenOutput,DiamondOutput
 20-12-21,./output_dir/Y20_M12_D21_INF_S21_gtdb_report,./output_dir/Y20_M12_D21.csv
 20-12-24,./output_dir/Y20_M12_D24_INF_S29_gtdb_report,./output_dir/Y20_M12_D24.csv
 20-12-28,./output_dir/Y20_M12_D28_INF_S37_gtdb_report,./output_dir/Y20_M12_D28.csv
+20-9-21,./output_dir/Y20_M9_D21_INF_S79_gtdb_report,./output_dir/Y20_M9_D21_INF_S79.csv
+20-9-28,./output_dir/Y20_M9_D28_INF_S3_gtdb_report,./output_dir/Y20_M9_D28_INF_S3.csv
+21-3-26,./output_dir/Y21_M3_D26_INF_S39_gtdb_report,./output_dir/Y21_M3_D26_INF_S39.csv
+21-3-29,./output_dir/Y21_M3_D29_INF_S47_gtdb_report,./output_dir/Y21_M3_D29_INF_S47.csv
+21-4-9,./output_dir/Y21_M4_D9_INF_S55_gtdb_report,./output_dir/Y21_M4_D9_INF_S55.csv
+21-5-21,./output_dir/Y21_M5_D21_INF_S77_gtdb_report,./output_dir/Y21_M5_D21_INF_S77.csv
+21-8-2,./output_dir/Y21_M8_D2_INF_S99_gtdb_report,./output_dir/Y21_M8_D2_INF_S99.csv
+21-8-6,./output_dir/Y21_M8_D6_INF_S42_gtdb_report,./output_dir/Y21_M8_D6_INF_S42.csv

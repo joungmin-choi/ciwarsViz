@@ -190,12 +190,20 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	timepoint = year + "-" + month + "-" + day
 	data = data.drop_duplicates(['gene', 'drug', 'protein_accession', 'gene_family'], keep = 'first')
 	data.reset_index(inplace = True, drop = True)
+	data_fpkm = data[['gene', 'drug', 'protein_accession', 'gene_family', 'FPKM_Normalization']]
+	data_tpm = data[['gene', 'drug', 'protein_accession', 'gene_family', 'TPM_Normalization']]
 	data = data[['gene', 'drug', 'protein_accession', 'gene_family', '16S_Normalization']]
 	data = data.rename(columns = {'16S_Normalization' : timepoint})
+	data_fpkm = data_fpkm.rename(columns = {'FPKM_Normalization' : timepoint})
+	data_tpm = data_tpm.rename(columns = {'TPM_Normalization' : timepoint})
 	if i == 0 :
 		arg_abun_data = data.copy()
+		arg_abun_data_fpkm = data_fpkm.copy()
+		arg_abun_data_tpm = data_tpm.copy()
 	else :
 		arg_abun_data = pd.merge(arg_abun_data, data, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
+		arg_abun_data_fpkm = pd.merge(arg_abun_data_fpkm, data_fpkm, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
+		arg_abun_data_tpm = pd.merge(arg_abun_data_tpm, data_tpm, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
 
 melted_arg_abun_data = pd.melt(arg_abun_data, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
 melted_arg_abun_data = melted_arg_abun_data.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
@@ -203,6 +211,20 @@ melted_arg_abun_data = melted_arg_abun_data.drop(['protein_accession', 'gene_fam
 melted_arg_abun_data = melted_arg_abun_data.drop_duplicates()
 melted_arg_abun_data = melted_arg_abun_data.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
 melted_arg_abun_data.to_csv(os.path.join(save_dir, "data_piechart.csv"), index = False)
+
+melted_arg_abun_data_fpkm = pd.melt(arg_abun_data_fpkm, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
+melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
+melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.drop(['protein_accession', 'gene_family'], axis=1)
+melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.drop_duplicates()
+melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
+melted_arg_abun_data_fpkm.to_csv(os.path.join(save_dir, "data_piechart_fpkm.csv"), index = False)
+
+melted_arg_abun_data_tpm = pd.melt(arg_abun_data_tpm, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
+melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
+melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.drop(['protein_accession', 'gene_family'], axis=1)
+melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.drop_duplicates()
+melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
+melted_arg_abun_data_tpm.to_csv(os.path.join(save_dir, "data_piechart_tpm.csv"), index = False)
 
 grouped = arg_abun_data.groupby('gene_family')
 arg_abun_data_gene_family_sum = grouped.sum()
@@ -325,6 +347,24 @@ drug_class = arg_abun_data_drug_sum.columns.tolist()
 arg_abun_data_drug_sum.reset_index(inplace = True, drop = False)
 arg_abun_data_drug_sum.rename(columns = {'index' : 'timepoint'}, inplace = True)
 
+grouped_fpkm = arg_abun_data_fpkm.groupby('drug')
+arg_abun_data_drug_sum_fpkm = grouped_fpkm.sum()
+arg_abun_data_drug_sum_fpkm = pd.DataFrame(arg_abun_data_drug_sum_fpkm)
+arg_abun_data_drug_sum_fpkm.drop(['gene', 'gene_family', 'protein_accession'], axis = 1, inplace = True)
+arg_abun_data_drug_sum_fpkm = arg_abun_data_drug_sum_fpkm.T
+del arg_abun_data_drug_sum_fpkm['unclassified']
+arg_abun_data_drug_sum_fpkm.reset_index(inplace = True, drop = False)
+arg_abun_data_drug_sum_fpkm.rename(columns = {'index' : 'timepoint'}, inplace = True)
+
+grouped_tpm = arg_abun_data_tpm.groupby('drug')
+arg_abun_data_drug_sum_tpm = grouped_tpm.sum()
+arg_abun_data_drug_sum_tpm = pd.DataFrame(arg_abun_data_drug_sum_tpm)
+arg_abun_data_drug_sum_tpm.drop(['gene', 'gene_family', 'protein_accession'], axis = 1, inplace = True)
+arg_abun_data_drug_sum_tpm = arg_abun_data_drug_sum_tpm.T
+del arg_abun_data_drug_sum_tpm['unclassified']
+arg_abun_data_drug_sum_tpm.reset_index(inplace = True, drop = False)
+arg_abun_data_drug_sum_tpm.rename(columns = {'index' : 'timepoint'}, inplace = True)
+
 pca = PCA(n_components=2)
 x = arg_abun_data_drug_sum.loc[:, drug_class].values
 y = arg_abun_data_drug_sum.loc[:,['timepoint']].values
@@ -334,8 +374,14 @@ principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_com
 
 arg_abun_data_drug_sum_copy = arg_abun_data_drug_sum.copy()
 arg_abun_data_drug_sum_copy.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
-arg_abun_data_drug_sum_copy = pd.concat([arg_abun_data_drug_sum_copy, principalDf], axis = 1)
+# arg_abun_data_drug_sum_copy = pd.concat([arg_abun_data_drug_sum_copy, principalDf], axis = 1)
 arg_abun_data_drug_sum_copy.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_16S.csv'), index=False, float_format = "%.8f")
+
+arg_abun_data_drug_sum_fpkm.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
+arg_abun_data_drug_sum_fpkm.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_fpkm.csv'), index=False, float_format = "%.8f")
+
+arg_abun_data_drug_sum_tpm.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
+arg_abun_data_drug_sum_tpm.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_tpm.csv'), index=False, float_format = "%.8f")
 
 # Standardize your data (excluding the "timepoint" column)
 x = arg_abun_data_drug_sum.drop(columns=["timepoint"]).values

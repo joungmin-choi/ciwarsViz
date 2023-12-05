@@ -1,4 +1,4 @@
-Sample Name,Time,DO,pH,Water_Temp
+Sample Name,Timepoint,DO,pH,Water_Temp
 a,20-10-12,7.05,7.65,11.8
 b,20-10-16,8.18,7.28,14
 c,20-10-19,4.91,7.18,20

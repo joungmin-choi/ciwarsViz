@@ -37,9 +37,9 @@ except :
 
 doc_list = []
 for i in range(len(meta_data)) :
-	year = meta_data['Time'][i].split('-')[0]
-	month = meta_data['Time'][i].split('-')[1]
-	day = meta_data['Time'][i].split('-')[2]
+	year = meta_data['Timepoint'][i].split('-')[0]
+	month = meta_data['Timepoint'][i].split('-')[1]
+	day = meta_data['Timepoint'][i].split('-')[2]
 	if len(day) == 1 :
 		day = '0' + day
 	if len(month) == 1 :
@@ -47,8 +47,8 @@ for i in range(len(meta_data)) :
 	timepoint = year + "-" + month + "-" + day
 	doc_list.append(timepoint)
 
-meta_data['Time'] = doc_list
-meta_data.rename(columns = {'Sample Name' : "Sample", "Time" : "DOC"}, inplace = True)
+meta_data['Timepoint'] = doc_list
+meta_data.rename(columns = {'Sample Name' : "Sample", "Timepoint" : "DOC"}, inplace = True)
 meta_data.to_csv(os.path.join(save_dir,"meta_data.csv"), mode = "w", index = False)
 
 ################################

@@ -35,11 +35,35 @@ try :
 except :
 	meta_data = pd.read_csv(meta_data_filename + ".csv")
 
+try :
+	print(len(meta_data))
+except :
+	raise Exception("Cannot read meta data file!")
+
+metadata_colums = meta_data.columns.tolist()
+for col in metadata_colums :
+	if 'time' in col.lower() :
+		timepoint_col = col
+	if 'sample' in col.lower() :
+		samplename_col = col
+
+try :
+	print(timepoint_col)
+except :
+	raise Exception("Cannot find column indicating timepoint in meta data file!")
+
+
+try :
+	print(samplename_col)
+except :
+	raise Exception("Cannot find column indicating sample name in meta data file!")
+
+
 doc_list = []
 for i in range(len(meta_data)) :
-	year = meta_data['Timepoint'][i].split('-')[0]
-	month = meta_data['Timepoint'][i].split('-')[1]
-	day = meta_data['Timepoint'][i].split('-')[2]
+	year = meta_data[timepoint_col][i].split('-')[0]
+	month = meta_data[timepoint_col][i].split('-')[1]
+	day = meta_data[timepoint_col][i].split('-')[2]
 	if len(day) == 1 :
 		day = '0' + day
 	if len(month) == 1 :
@@ -47,14 +71,15 @@ for i in range(len(meta_data)) :
 	timepoint = year + "-" + month + "-" + day
 	doc_list.append(timepoint)
 
-meta_data['Timepoint'] = doc_list
-meta_data.rename(columns = {'Sample Name' : "Sample", "Timepoint" : "DOC"}, inplace = True)
+meta_data[timepoint_col] = doc_list
+meta_data.rename(columns = {samplename_col : "Sample", timepoint_col : "DOC"}, inplace = True)
 meta_data.to_csv(os.path.join(save_dir,"meta_data.csv"), mode = "w", index = False)
 
 ################################
 ### Find anomaly in metadata ###
 ################################
 del meta_data['Sample']
+
 meta_data.rename(columns = {'DOC' : 'timepoint'}, inplace = True)
 meta_data.set_index('timepoint', inplace = True, drop = True)
 
@@ -99,7 +124,22 @@ final_df.to_csv(os.path.join(save_dir, "viz_metadata_anomaly_data.csv"), mode = 
 #### Kraken2 output processing ####
 ###################################
 
-otu_sample_info = pd.read_csv(output_info_filename)
+try : 
+	otu_sample_info = pd.read_csv(output_info_filename)
+except :
+	raise Exception("Cannot read **sample_list.csv** having kraken and diamond output path!")
+
+
+for col in otu_sample_info.columns.tolist() :
+	if 'time' in col.lower() :
+		otu_time_col = col 
+	if 'kraken' in col.lower() :
+		kraken_col = col 
+	if 'diamond' in col.lower() :
+		diamond_col = col
+
+otu_sample_info.rename(columns = {otu_time_col : "Timepoint", kraken_col : "KrakenOutput", diamond_col : "DiamondOutput"}, inplace = True)
+
 
 taxa_list = ['P', 'C', 'O', 'F', 'G', 'S']
 taxa_fullname_list = ['phylum', 'class', 'order', 'family', 'genus', 'species']
@@ -110,7 +150,12 @@ for taxa in taxa_list :
 
 for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	filename = otu_sample_info['KrakenOutput'][i]
-	data = pd.read_csv(filename, header = None, sep = '\t') 
+	try :
+		data = pd.read_csv(filename, header = None, sep = '\t') 
+	except Exception:
+		print(Exception)
+		continue
+
 	year = otu_sample_info['Timepoint'][i].split('-')[0]
 	month = otu_sample_info['Timepoint'][i].split('-')[1]
 	day = otu_sample_info['Timepoint'][i].split('-')[2]
@@ -239,17 +284,6 @@ melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.drop_duplicates()
 melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
 melted_arg_abun_data_tpm.to_csv(os.path.join(save_dir, "data_piechart_tpm.csv"), index = False)
 
-
-'''
-grouped = arg_abun_data.groupby('gene_family')
-arg_abun_data_gene_family_sum = grouped.sum()
-arg_abun_data_gene_family_sum = pd.DataFrame(arg_abun_data_gene_family_sum)
-arg_abun_data_gene_family_sum.drop(['drug', 'protein_accession'], axis = 1, inplace = True)
-arg_abun_data_gene_family_sum.set_index('gene', inplace = True, drop = True)
-arg_abun_data_gene_family_sum = arg_abun_data_gene_family_sum.T
-arg_abun_data_gene_family_sum = arg_abun_data_gene_family_sum.sort_index()
-arg_abun_data_gene_family_sum.index.name = 'timepoint'
-'''
 
 feature_list = arg_abun_data_gene_family_sum.columns.tolist()
 

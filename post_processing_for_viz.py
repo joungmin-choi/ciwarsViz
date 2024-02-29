@@ -41,11 +41,23 @@ except :
 	raise Exception("Cannot read meta data file!")
 
 metadata_colums = meta_data.columns.tolist()
+selected_metadata_columns = []
 for col in metadata_colums :
 	if 'time' in col.lower() :
 		timepoint_col = col
-	if 'sample' in col.lower() :
+		selected_metadata_columns.append(col)
+	elif 'sample' in col.lower() :
 		samplename_col = col
+		selected_metadata_columns.append(col)
+	else :
+		try :
+			meta_data[col].astype('float')
+			selected_metadata_columns.append(col)
+		except :
+			continue
+
+meta_data = meta_data[selected_metadata_columns]
+
 
 try :
 	print(timepoint_col)

@@ -76,6 +76,8 @@ for i in range(len(meta_data)) :
 	year = meta_data[timepoint_col][i].split('-')[0]
 	month = meta_data[timepoint_col][i].split('-')[1]
 	day = meta_data[timepoint_col][i].split('-')[2]
+	if len(year) == 4 :
+		year = year[2:]
 	if len(day) == 1 :
 		day = '0' + day
 	if len(month) == 1 :
@@ -171,6 +173,8 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	year = otu_sample_info['Timepoint'][i].split('-')[0]
 	month = otu_sample_info['Timepoint'][i].split('-')[1]
 	day = otu_sample_info['Timepoint'][i].split('-')[2]
+	if len(year) == 4 :
+		year = year[2:]
 	if len(day) == 1 :
 		day = '0' + day
 	if len(month) == 1 :
@@ -220,6 +224,10 @@ for i in range(len(taxa_list)) : #taxa_list
 	top20_class['Sum'] = top20_class.T.sum()
 	top20_class.index.name = 'timepoint'
 	top20_class.to_csv(os.path.join(save_dir, "data_eff_" + taxa + "_stacked.csv"), mode = "w", index = True)
+	if taxa == 'S' :
+		top20_class.to_csv(os.path.join(save_dir, "data_eff.csv"), mode = "w", index = True)
+		del top20_class['Sum']
+		top20_class.T.to_csv(os.path.join(save_dir, "transpose_eff.csv"), mode = "w", index = True)
 
 	data_dict[taxa] = data_dict[taxa][top30_otu_list]
 	top30_otu_list = [otu.strip() for otu in top30_otu_list]
@@ -246,6 +254,8 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	year = otu_sample_info['Timepoint'][i].split('-')[0]
 	month = otu_sample_info['Timepoint'][i].split('-')[1]
 	day = otu_sample_info['Timepoint'][i].split('-')[2]
+	if len(year) == 4 :
+		year = year[2:]
 	if len(day) == 1 :
 		day = '0' + day
 	if len(month) == 1 :
@@ -253,20 +263,20 @@ for i in range(len(otu_sample_info)) : #len(otu_sample_info)
 	timepoint = year + "-" + month + "-" + day
 	data = data.drop_duplicates(['gene', 'drug', 'protein_accession', 'gene_family'], keep = 'first')
 	data.reset_index(inplace = True, drop = True)
-	data_fpkm = data[['gene', 'drug', 'protein_accession', 'gene_family', 'FPKM_Normalization']]
-	data_tpm = data[['gene', 'drug', 'protein_accession', 'gene_family', 'TPM_Normalization']]
-	data = data[['gene', 'drug', 'protein_accession', 'gene_family', '16S_Normalization']]
-	data = data.rename(columns = {'16S_Normalization' : timepoint})
-	data_fpkm = data_fpkm.rename(columns = {'FPKM_Normalization' : timepoint})
-	data_tpm = data_tpm.rename(columns = {'TPM_Normalization' : timepoint})
+	#data_fpkm = data[['gene', 'drug', 'protein_accession', 'gene_family', 'FPKM_Normalization']]
+	#data_tpm = data[['gene', 'drug', 'protein_accession', 'gene_family', 'TPM_Normalization']]
+	data = data[['gene', 'drug', 'protein_accession', 'gene_family', 'rpob_Normalization']]
+	data = data.rename(columns = {'rpob_Normalization' : timepoint})
+	#data_fpkm = data_fpkm.rename(columns = {'FPKM_Normalization' : timepoint})
+	#data_tpm = data_tpm.rename(columns = {'TPM_Normalization' : timepoint})
 	if i == 0 :
 		arg_abun_data = data.copy()
-		arg_abun_data_fpkm = data_fpkm.copy()
-		arg_abun_data_tpm = data_tpm.copy()
+		#arg_abun_data_fpkm = data_fpkm.copy()
+		#arg_abun_data_tpm = data_tpm.copy()
 	else :
 		arg_abun_data = pd.merge(arg_abun_data, data, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
-		arg_abun_data_fpkm = pd.merge(arg_abun_data_fpkm, data_fpkm, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
-		arg_abun_data_tpm = pd.merge(arg_abun_data_tpm, data_tpm, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
+		#arg_abun_data_fpkm = pd.merge(arg_abun_data_fpkm, data_fpkm, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
+		#arg_abun_data_tpm = pd.merge(arg_abun_data_tpm, data_tpm, on = ["gene", 'drug', 'protein_accession', 'gene_family'])
 
 melted_arg_abun_data = pd.melt(arg_abun_data, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
 melted_arg_abun_data = melted_arg_abun_data.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
@@ -281,7 +291,7 @@ tmp_arg_abundance = melted_arg_abun_data.copy()
 del tmp_arg_abundance['drug']
 arg_abun_data_gene_family_sum = pd.pivot_table(tmp_arg_abundance, values='abundance', index=['timepoint'],columns=['gene'])
 
-
+'''
 melted_arg_abun_data_fpkm = pd.melt(arg_abun_data_fpkm, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
 melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
 melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.drop(['protein_accession', 'gene_family'], axis=1)
@@ -289,13 +299,14 @@ melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.drop_duplicates()
 melted_arg_abun_data_fpkm = melted_arg_abun_data_fpkm.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
 melted_arg_abun_data_fpkm.to_csv(os.path.join(save_dir, "data_piechart_fpkm.csv"), index = False)
 
+
 melted_arg_abun_data_tpm = pd.melt(arg_abun_data_tpm, id_vars=["gene", "drug", "protein_accession", "gene_family"], var_name="timepoint", value_name="abundance")
 melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.sort_values(by=["gene", "drug", "protein_accession", "gene_family", "timepoint"]).reset_index(drop=True)
 melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.drop(['protein_accession', 'gene_family'], axis=1)
 melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.drop_duplicates()
 melted_arg_abun_data_tpm = melted_arg_abun_data_tpm.groupby(["gene", "drug", "timepoint"])['abundance'].sum().reset_index()
 melted_arg_abun_data_tpm.to_csv(os.path.join(save_dir, "data_piechart_tpm.csv"), index = False)
-
+'''
 
 feature_list = arg_abun_data_gene_family_sum.columns.tolist()
 
@@ -394,8 +405,15 @@ for sample in sample_list :
 	final_summary_df = pd.concat([final_summary_df, tmp_dict], axis = 0)
 
 final_summary_df.fillna(0, inplace = True)
-final_summary_df['anomaly'] = final_summary_df['anomaly'].astype('float')
-final_summary_df['normal'] = final_summary_df['normal'].astype('float')
+
+for col in ['anomaly', 'normal'] :
+	try :
+		final_summary_df[col] = final_summary_df[col].astype('float')
+	except :
+		print("No " + col)
+
+#final_summary_df['anomaly'] = final_summary_df['anomaly'].astype('float')
+#final_summary_df['normal'] = final_summary_df['normal'].astype('float')
 
 final_summary_df.to_csv(os.path.join(save_dir, "viz_ARG_anomaly_summary.csv"), mode = "w", index = False)
 
@@ -409,6 +427,7 @@ drug_class = arg_abun_data_drug_sum.columns.tolist()
 arg_abun_data_drug_sum.reset_index(inplace = True, drop = False)
 arg_abun_data_drug_sum.rename(columns = {'index' : 'timepoint'}, inplace = True)
 
+'''
 grouped_fpkm = arg_abun_data_fpkm.groupby('drug')
 arg_abun_data_drug_sum_fpkm = grouped_fpkm.sum()
 arg_abun_data_drug_sum_fpkm = pd.DataFrame(arg_abun_data_drug_sum_fpkm)
@@ -418,6 +437,7 @@ del arg_abun_data_drug_sum_fpkm['unclassified']
 arg_abun_data_drug_sum_fpkm.reset_index(inplace = True, drop = False)
 arg_abun_data_drug_sum_fpkm.rename(columns = {'index' : 'timepoint'}, inplace = True)
 
+
 grouped_tpm = arg_abun_data_tpm.groupby('drug')
 arg_abun_data_drug_sum_tpm = grouped_tpm.sum()
 arg_abun_data_drug_sum_tpm = pd.DataFrame(arg_abun_data_drug_sum_tpm)
@@ -426,24 +446,30 @@ arg_abun_data_drug_sum_tpm = arg_abun_data_drug_sum_tpm.T
 del arg_abun_data_drug_sum_tpm['unclassified']
 arg_abun_data_drug_sum_tpm.reset_index(inplace = True, drop = False)
 arg_abun_data_drug_sum_tpm.rename(columns = {'index' : 'timepoint'}, inplace = True)
+'''
 
+'''
 pca = PCA(n_components=2)
 x = arg_abun_data_drug_sum.loc[:, drug_class].values
 y = arg_abun_data_drug_sum.loc[:,['timepoint']].values
 x = StandardScaler().fit_transform(x)
-principalComponents = pca.fit_transform(x)
-principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_component_1', 'principal_component_2'])
-
+if len(arg_abun_data_drug_sum) > 1 :
+	principalComponents = pca.fit_transform(x)
+	principalDf = pd.DataFrame(data = principalComponents, columns = ['principal_component_1', 'principal_component_2'])
+'''
 arg_abun_data_drug_sum_copy = arg_abun_data_drug_sum.copy()
 arg_abun_data_drug_sum_copy.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
-# arg_abun_data_drug_sum_copy = pd.concat([arg_abun_data_drug_sum_copy, principalDf], axis = 1)
-arg_abun_data_drug_sum_copy.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_16S.csv'), index=False, float_format = "%.8f")
+	# arg_abun_data_drug_sum_copy = pd.concat([arg_abun_data_drug_sum_copy, principalDf], axis = 1)
+arg_abun_data_drug_sum_copy.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_rpob.csv'), index=False, float_format = "%.8f")
 
+
+'''
 arg_abun_data_drug_sum_fpkm.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
 arg_abun_data_drug_sum_fpkm.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_fpkm.csv'), index=False, float_format = "%.8f")
 
 arg_abun_data_drug_sum_tpm.rename(columns = {'beta-lactam' : 'betalactam'}, inplace = True)
 arg_abun_data_drug_sum_tpm.to_csv(os.path.join(save_dir, 'pca_output_arg_abundance_tpm.csv'), index=False, float_format = "%.8f")
+'''
 
 # Standardize your data (excluding the "timepoint" column)
 x = arg_abun_data_drug_sum.drop(columns=["timepoint"]).values
@@ -457,7 +483,12 @@ principalComponents = mds.fit_transform(x)
 principalDf = pd.DataFrame(data=principalComponents, columns=['nMDS_component_1', 'nMDS_component_2'])
 
 # Create a range of K values to test
-k_values = range(4, 11)  # You can adjust the range
+if len(arg_abun_data_drug_sum) > 11 :
+	k_values = range(2, 11)  # You can adjust the range
+elif len(arg_abun_data_drug_sum) == 1 :
+	k_values = []
+else :
+	k_values = range(2, len(arg_abun_data_drug_sum))
 
 # Initialize lists to store silhouette scores
 silhouette_scores = []
@@ -470,15 +501,16 @@ for k in k_values:
     silhouette_scores.append(silhouette_avg)
 
 # Find the K with the highest silhouette score
-optimal_k = k_values[silhouette_scores.index(max(silhouette_scores))]
+try :
+	optimal_k = k_values[silhouette_scores.index(max(silhouette_scores))]
+	# Perform K-means clustering with the optimal K (using principal components)
+	optimal_kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+	optimal_cluster_labels = optimal_kmeans.fit_predict(principalDf)
 
-
-# Perform K-means clustering with the optimal K (using principal components)
-optimal_kmeans = KMeans(n_clusters=optimal_k, random_state=42)
-optimal_cluster_labels = optimal_kmeans.fit_predict(principalDf)
-
-# Add cluster labels to the principal components DataFrame
-principalDf['cluster_number'] = optimal_cluster_labels
+	# Add cluster labels to the principal components DataFrame
+	principalDf['cluster_number'] = optimal_cluster_labels
+except :
+	principalDf['cluster_number'] = [0]
 
 # Add the "timepoint" column to the DataFrame
 principalDf['timepoint'] = arg_abun_data_drug_sum['timepoint'].values
@@ -508,7 +540,12 @@ for file_name in file_names:
     principalDf_species = pd.DataFrame(data=principalComponents_species, columns=['nMDS_component_1', 'nMDS_component_2'])
 
     # Create a range of K values to test
-    k_values_species = range(4, 11)  # You can adjust the range
+    if len(principalDf_species) > 11 :
+    	k_values_species = range(2, 11)  # You can adjust the range
+    elif len(principalDf_species) == 1 :
+    	k_values_species = []
+    else :
+    	k_values_species = range(2, len(principalDf_species))
 
     # Initialize lists to store silhouette scores
     silhouette_scores_species = []
@@ -520,15 +557,18 @@ for file_name in file_names:
         silhouette_avg_species = silhouette_score(principalDf_species, cluster_labels_species)
         silhouette_scores_species.append(silhouette_avg_species)
 
-    # Find the K with the highest silhouette score
-    optimal_k_species = k_values_species[silhouette_scores_species.index(max(silhouette_scores_species))]
+    try :
+    	# Find the K with the highest silhouette score
+    	optimal_k_species = k_values_species[silhouette_scores_species.index(max(silhouette_scores_species))]
 
-    # Perform K-means clustering with the optimal K (using principal components)
-    optimal_kmeans_species = KMeans(n_clusters=optimal_k_species, random_state=42)
-    optimal_cluster_labels_species = optimal_kmeans_species.fit_predict(principalDf_species)
+    	# Perform K-means clustering with the optimal K (using principal components)
+    	optimal_kmeans_species = KMeans(n_clusters=optimal_k_species, random_state=42)
+    	optimal_cluster_labels_species = optimal_kmeans_species.fit_predict(principalDf_species)
 
-    # Add cluster labels to the principal components DataFrame
-    principalDf_species['cluster_number'] = optimal_cluster_labels_species
+    	# Add cluster labels to the principal components DataFrame
+    	principalDf_species['cluster_number'] = optimal_cluster_labels_species
+    except :
+    	principalDf_species['cluster_number'] = [0]
 
     # Add the "timepoint" column to the DataFrame
     principalDf_species['timepoint'] = timepoints_species_data['timepoint'].values
